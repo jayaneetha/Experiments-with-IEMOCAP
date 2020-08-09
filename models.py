@@ -509,3 +509,67 @@ def get_model_14_multi(input_layer, model_name_prefix=''):
     model = Model(inputs=input_layer, outputs=[emo_d_out, gen_d_out], name=model_name_prefix + '_model_14_multi')
 
     return model
+
+
+def get_model_14_1_multi(input_layer, model_name_prefix=''):
+    c1 = Conv2D(5, kernel_size=8, padding='same', activation='relu')(input_layer)
+    bn1 = BatchNormalization()(c1)
+    mp1 = MaxPooling2D(strides=2)(bn1)
+
+    c2 = Conv2D(3, kernel_size=8, padding='same', activation='relu')(mp1)
+    mp2 = MaxPooling2D(strides=2)(c2)
+
+    f1 = TimeDistributed(Flatten())(mp2)
+    lstm = LSTM(16, return_sequences=True)(f1)
+
+    f2 = Flatten()(lstm)
+
+    # gender part
+    gen_d1 = Dense(128, activation='relu')(f2)
+    gen_dr1 = Dropout(0.1)(gen_d1)
+    gen_d_out = Dense(len(GENDERS), activation='softmax', name='gender_output')(gen_dr1)
+
+    # emotion part
+    emo_d1 = Dense(128, activation='relu')(f2)
+    emo_dr1 = Dropout(0.1)(emo_d1)
+
+    concat = concatenate([emo_dr1, gen_d_out])
+
+    emo_d_out = Dense(len(EMOTIONS), activation='softmax', name='emotion_output')(concat)
+
+    model = Model(inputs=input_layer, outputs=[emo_d_out, gen_d_out], name=model_name_prefix + '_model_14_1_multi')
+
+    return model
+
+
+def get_model_14_2_multi(input_layer, model_name_prefix=''):
+    c1 = Conv2D(5, kernel_size=8, padding='same')(input_layer)
+    bn1 = BatchNormalization()(c1)
+    elu1 = ELU()(bn1)
+    mp1 = MaxPooling2D(strides=2)(elu1)
+
+    c2 = Conv2D(3, kernel_size=8, padding='same')(mp1)
+    elu2 = ELU()(c2)
+    mp2 = MaxPooling2D(strides=2)(elu2)
+
+    f1 = TimeDistributed(Flatten())(mp2)
+    lstm = LSTM(16, return_sequences=True)(f1)
+
+    f2 = Flatten()(lstm)
+
+    # gender part
+    gen_d1 = Dense(128, activation='relu')(f2)
+    gen_dr1 = Dropout(0.1)(gen_d1)
+    gen_d_out = Dense(len(GENDERS), activation='softmax', name='gender_output')(gen_dr1)
+
+    # emotion part
+    emo_d1 = Dense(128, activation='relu')(f2)
+    emo_dr1 = Dropout(0.1)(emo_d1)
+
+    concat = concatenate([emo_dr1, gen_d_out])
+
+    emo_d_out = Dense(len(EMOTIONS), activation='softmax', name='emotion_output')(concat)
+
+    model = Model(inputs=input_layer, outputs=[emo_d_out, gen_d_out], name=model_name_prefix + '_model_14_2_multi')
+
+    return model

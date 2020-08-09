@@ -3,7 +3,7 @@ import numpy as np
 from enum import Enum
 
 from Framework import get_dataset, randomize_split
-from constants import NUM_MFCC, EMOTIONS
+from constants import NUM_MFCC, EMOTIONS, SR
 
 
 class FeatureType(Enum):
@@ -12,9 +12,10 @@ class FeatureType(Enum):
     LOG_MEL = 3
     STFT = 4
     RAW = 5
+    PITCH = 6
 
 
-def get_data(feature_type: FeatureType.MFCC):
+def get_data(feature_types: [FeatureType.MFCC]):
     # data = get_dataset("signal-{}-class-dataset-4sec.pkl".format(len(EMOTIONS)))
     # data = get_dataset("signal-{}-class-dataset-4sec_sr_8k.pkl".format(len(EMOTIONS)))
     # data = get_dataset("signal-{}-class-dataset-8sec_sr_16k.pkl".format(len(EMOTIONS)))
@@ -25,8 +26,13 @@ def get_data(feature_type: FeatureType.MFCC):
     x_train, y_emo_train, y_gen_train = [], [], []
 
     for d in training_data:
-        feature = _get_feature(feature_type, d['x'])
-        x_train.append(feature)
+        training_features = {}
+
+        for feature_type in feature_types:
+            feature = _get_feature(feature_type, d['x'])
+            training_features[feature_type.name] = feature
+
+        x_train.append(training_features)
         y_emo_train.append(d['emo'])
         y_gen_train.append(d['gen'])
 
@@ -36,8 +42,13 @@ def get_data(feature_type: FeatureType.MFCC):
 
     x_test, y_emo_test, y_gen_test = [], [], []
     for d in testing_data:
-        feature = _get_feature(feature_type, d['x'])
-        x_test.append(feature)
+        testing_features = {}
+
+        for feature_type in feature_types:
+            feature = _get_feature(feature_type, d['x'])
+            testing_features[feature_type.name] = feature
+
+        x_test.append(testing_features)
         y_emo_test.append(d['emo'])
         y_gen_test.append(d['gen'])
 
@@ -50,15 +61,15 @@ def get_data(feature_type: FeatureType.MFCC):
 
 def _get_feature(feature_type: FeatureType, signal):
     if feature_type == FeatureType.MFCC:
-        mfcc = librosa.feature.mfcc(signal, sr=22050, n_mfcc=NUM_MFCC)
+        mfcc = librosa.feature.mfcc(signal, sr=SR, n_mfcc=NUM_MFCC)
         return mfcc
 
     if feature_type == FeatureType.MEL:
-        melspectrogram = librosa.feature.melspectrogram(signal, sr=22050)
+        melspectrogram = librosa.feature.melspectrogram(signal, sr=SR)
         return melspectrogram
 
     if feature_type == FeatureType.LOG_MEL:
-        melspectrogram = librosa.feature.melspectrogram(signal, sr=22050)
+        melspectrogram = librosa.feature.melspectrogram(signal, sr=SR)
         log_mel = np.log(melspectrogram)
         return log_mel
 

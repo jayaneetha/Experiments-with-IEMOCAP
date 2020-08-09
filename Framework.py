@@ -4,13 +4,14 @@ import pickle
 import numpy as np
 import tensorflow as tf
 from keras import Model
-from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.callbacks import EarlyStopping, ModelCheckpoint, CSVLogger
 from sklearn.metrics import confusion_matrix
 
-from constants import NUM_MFCC, NO_features, EMOTIONS, WEEK
+from constants import EMOTIONS, WEEK
 
 
-def train(model: Model, x, y, EPOCHS, batch_size=4, early_stopping=True):
+def train(model: Model, x: [], y: [], EPOCHS: int, batch_size=4, early_stopping=True,
+          save_history=True):
     print("Start Training")
 
     log_dir = "logs/week_{}/fit_{}_class/{}_{}_{}".format(WEEK, len(EMOTIONS), model.name,
@@ -37,6 +38,13 @@ def train(model: Model, x, y, EPOCHS, batch_size=4, early_stopping=True):
             )
         )
 
+    if save_history:
+        history_file = "history/week_{}/{}_{}_{}.csv".format(WEEK, model.name, type(model.optimizer).__name__,
+                                                             datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+        callback_list.append(
+            CSVLogger(filename=history_file)
+        )
+
     tic = datetime.datetime.now()
     history = model.fit(x, y,
                         batch_size=batch_size, epochs=EPOCHS,
@@ -47,10 +55,18 @@ def train(model: Model, x, y, EPOCHS, batch_size=4, early_stopping=True):
 
     diff = toc - tic
     print("Finished Training: Took : {} Seconds".format(diff.total_seconds()))
+
     return history, model
 
 
-def test(model, x, y):
+def test(model: Model, x: [], y: []):
+    """
+
+    :param model:
+    :param x:
+    :param y:
+    :return:
+    """
     matrices = model.evaluate(x, y)
 
     for i in range(len(model.metrics_names)):
@@ -160,18 +176,13 @@ def plot_confusion_matrix(cm,
 
 
 def get_confusion_matrix(model: Model, x_test, y_test, prediction_index=None):
-    pred_classes = []
-    for x in x_test:
-        pred = model.predict(x.reshape(1, NUM_MFCC, NO_features, 1))
-        if prediction_index is None:
-            pred_class = np.argmax(pred)
-        else:
-            pred_class = np.argmax(pred[prediction_index])
-        pred_classes.append(pred_class)
+    predictions = model.predict(x_test)
+    if prediction_index is None:
+        prediction_classes = np.argmax(predictions[0], axis=1)
+    else:
+        prediction_classes = np.argmax(predictions[prediction_index], axis=1)
 
-    pred_classes = np.array(pred_classes)
-
-    return confusion_matrix(np.argmax(y_test, axis=1), pred_classes)
+    return confusion_matrix(np.argmax(y_test, axis=1), prediction_classes)
 
 
 def get_dataset(filename='signal-dataset.pkl'):

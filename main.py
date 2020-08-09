@@ -1,10 +1,11 @@
 import datetime
 import socket
 
+import numpy as np
 import os
 import tensorflow as tf
 from keras import Input, Model
-from keras.optimizers import Adam
+from keras.optimizers import SGD
 
 import models
 from Framework import train, test, get_confusion_matrix, plot_confusion_matrix, plot_model
@@ -20,7 +21,7 @@ config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 tf.compat.v1.keras.backend.set_session(sess)
 
-EPOCHS = 200
+EPOCHS = 2
 DRAW_CONFUSION_MATRIX = True
 SAVE_MODELS = True
 
@@ -29,15 +30,20 @@ def train_mfcc():
     input_layer = Input(shape=(NUM_MFCC, NO_features, 1))
     model = _get_model(input_layer, 'mfcc')
 
-    (x_train, y_emo_train, y_gen_train), (x_test, y_emo_test, y_gen_test) = get_data(feature_type=FeatureType.MFCC)
+    (x_train, y_emo_train, y_gen_train), (x_test, y_emo_test, y_gen_test) = get_data(feature_types=[FeatureType.MFCC])
 
-    history, model = train(model, x_train.reshape((len(x_train), NUM_MFCC, NO_features, 1)), [y_emo_train, y_gen_train],
-                           EPOCHS,
-                           batch_size=16)
+    train_mfccs = np.array([d[FeatureType.MFCC.name] for d in x_train])
+    train_mfccs = train_mfccs.reshape((len(train_mfccs), NUM_MFCC, NO_features, 1))
 
-    test(model, x_test.reshape((len(x_test), NUM_MFCC, NO_features, 1)), [y_emo_test, y_gen_test])
-    _draw_confusion_matrix(model, x_test, y_emo_test, 'mfcc', EMOTIONS, 'Emotions', 0)
-    _draw_confusion_matrix(model, x_test, y_gen_test, 'mfcc', GENDERS, 'Gender', 1)
+    history, model = train(model, [train_mfccs], [y_emo_train, y_gen_train], EPOCHS, batch_size=16)
+
+    test_mfccs = np.array([d[FeatureType.MFCC.name] for d in x_test])
+    test_mfccs = test_mfccs.reshape((len(test_mfccs), NUM_MFCC, NO_features, 1))
+
+    test(model, [test_mfccs], [y_emo_test, y_gen_test])
+
+    _draw_confusion_matrix(model, [test_mfccs], y_emo_test, 'mfcc', EMOTIONS, 'Emotions', 0)
+    _draw_confusion_matrix(model, [test_mfccs], y_gen_test, 'mfcc', GENDERS, 'Gender', 1)
 
     if SAVE_MODELS:
         _save_model(model, 'mfcc')
@@ -114,11 +120,11 @@ def _save_model(model: Model, feature_type):
 
 
 def _get_model(input_layer, mel_type):
-    model = models.get_model_14_multi(input_layer, model_name_prefix=mel_type)
+    model = models.get_model_14_1_multi(input_layer, model_name_prefix=mel_type)
 
     model.compile(loss='categorical_crossentropy',
-                  # optimizer=SGD(lr=1e-4, decay=1e-6, momentum=0.9, nesterov=True),
-                  optimizer=Adam(),
+                  optimizer=SGD(lr=1e-4, decay=1e-6, momentum=0.9, nesterov=True),
+                  # optimizer=Adam(),
                   # optimizer=RMSprop(),
                   # optimizer=Adagrad(),
                   metrics=['accuracy'])
