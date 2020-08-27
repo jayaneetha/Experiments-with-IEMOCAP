@@ -20,7 +20,8 @@ def get_data(feature_types: [FeatureType.MFCC]):
     # data = get_dataset("signal-{}-class-dataset-4sec_sr_8k.pkl".format(len(EMOTIONS)))
     # data = get_dataset("signal-{}-class-dataset-8sec_sr_16k.pkl".format(len(EMOTIONS)))
     # data = get_dataset("signal-{}-class-dataset-2sec_sr_16k.pkl".format(len(EMOTIONS)))
-    data = get_dataset("signal-no-silent-{}-class-dataset-2sec_sr_16k.pkl".format(len(EMOTIONS)))
+    # data = get_dataset("signal-no-silent-{}-class-dataset-2sec_sr_16k.pkl".format(len(EMOTIONS)))
+    data = get_dataset("signal-no-silent-{}-class-dataset-2sec_sr_22k.pkl".format(len(EMOTIONS)))
 
     training_data, testing_data = randomize_split(data)
     x_train, y_emo_train, y_gen_train = [], [], []

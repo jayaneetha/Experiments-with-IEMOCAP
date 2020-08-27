@@ -11,12 +11,12 @@ from constants import EMOTIONS, WEEK
 
 
 def train(model: Model, x: [], y: [], EPOCHS: int, batch_size=4, early_stopping=True,
-          save_history=True):
+          save_history=True, TIME=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")):
     print("Start Training")
 
     log_dir = "logs/week_{}/fit_{}_class/{}_{}_{}".format(WEEK, len(EMOTIONS), model.name,
                                                           type(model.optimizer).__name__,
-                                                          datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+                                                          TIME)
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir)
 
     callback_list = [
@@ -40,7 +40,7 @@ def train(model: Model, x: [], y: [], EPOCHS: int, batch_size=4, early_stopping=
 
     if save_history:
         history_file = "history/week_{}/{}_{}_{}.csv".format(WEEK, model.name, type(model.optimizer).__name__,
-                                                             datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+                                                             TIME)
         callback_list.append(
             CSVLogger(filename=history_file)
         )
@@ -56,21 +56,18 @@ def train(model: Model, x: [], y: [], EPOCHS: int, batch_size=4, early_stopping=
     diff = toc - tic
     print("Finished Training: Took : {} Seconds".format(diff.total_seconds()))
 
-    return history, model
+    return history, model, diff.total_seconds()
 
 
 def test(model: Model, x: [], y: []):
-    """
-
-    :param model:
-    :param x:
-    :param y:
-    :return:
-    """
     matrices = model.evaluate(x, y)
 
+    test_results = {}
     for i in range(len(model.metrics_names)):
         print("{} : \t {}".format(model.metrics_names[i], matrices[i]))
+        test_results[model.metrics_names[i]] = matrices[i]
+
+    return test_results
 
 
 def randomize_split(data, split_ratio=0.8):

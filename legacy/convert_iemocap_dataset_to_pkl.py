@@ -182,7 +182,7 @@ if __name__ == "__main__":
 
     print("restructured. \n saving...")
 
-    with open('signal-no-silent-{}-class-dataset-{}sec_sr_16k.pkl'.format(len(EMOTIONS), DURATION), 'wb') as f:
+    with open('signal-no-silent-{}-class-dataset-{}sec_sr_22k.pkl'.format(len(EMOTIONS), DURATION), 'wb') as f:
         pickle.dump(data, f)
 
     print('end')

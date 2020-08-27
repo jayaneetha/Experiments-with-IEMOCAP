@@ -17,11 +17,11 @@ GENDERS = ['M', 'F']
 NUM_MFCC = 40
 # DURATION = 4
 DURATION = 2
-SR = 16000
-# NO_features = 87 #sr22050&2sec
+SR = 22050
+NO_features = 87  # sr22050&2sec
 # NO_features = 173  # sr22050&4sec
 # NO_features = 63  # sr8000&4sec
-NO_features = 63  # sr16000&2sec
+# NO_features = 63  # sr16000&2sec
 # NO_features = 251  # sr16000&8sec
 
-WEEK = str(5)
+WEEK = str(6)
