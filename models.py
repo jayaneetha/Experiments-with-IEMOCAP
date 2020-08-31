@@ -573,3 +573,28 @@ def get_model_14_2_multi(input_layer, model_name_prefix=''):
     model = Model(inputs=input_layer, outputs=[emo_d_out, gen_d_out], name=model_name_prefix + '_model_14_2_multi')
 
     return model
+
+
+# ****************************** RL MODELS ******************************
+
+
+def get_model_9_rl(input_layer, model_name_prefix=''):
+    c1 = Conv2D(5, kernel_size=8, padding='same', activation='relu')(input_layer)
+    bn1 = BatchNormalization()(c1)
+
+    c2 = Conv2D(3, kernel_size=8, padding='same', activation='relu')(bn1)
+
+    f1 = TimeDistributed(Flatten())(c2)
+    lstm = LSTM(16, return_sequences=True)(f1)
+
+    f1 = Flatten()(lstm)
+
+    # emotion part
+    emo_d1 = Dense(256, activation='relu')(f1)
+    emo_dr1 = Dropout(0.3)(emo_d1)
+
+    d_out = Dense(len(EMOTIONS), activation='linear', name='emotion_output')(emo_dr1)
+
+    model = Model(inputs=input_layer, outputs=[d_out], name=model_name_prefix + '_model_9')
+
+    return model
