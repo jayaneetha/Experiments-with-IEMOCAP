@@ -10,6 +10,10 @@ from constants import DATA_ROOT, EMOTIONS, GENDERS, DURATION, NUM_MFCC, SR
 
 dataset_base_path = DATA_ROOT
 
+SPLIT_INTO_FRAMES = False
+
+AUDIO_LENGTH_FILTER = 6  # seconds
+
 
 def get_emotion_of_sentence(session_id, dialog_id, sentence_id):
     emo_evaluation_file = dataset_base_path + '/' + session_id + '/dialog/EmoEvaluation/' + dialog_id + '.txt'
@@ -131,13 +135,20 @@ def get_dataset(session_id='*', sampling_rate=None):
 
             audio = remove_silent(audio)
 
-            signal_frames = split_audio(audio, sr, DURATION)
+            if len(audio) / sr > AUDIO_LENGTH_FILTER:
+                if SPLIT_INTO_FRAMES:
+                    signal_frames = split_audio(audio, sr, DURATION)
 
-            for frame in signal_frames:
-                X.append(frame)
-                Y_emo.append(emo)
-                Y_gen.append(gen)
-                details.append(file_details)
+                    for frame in signal_frames:
+                        X.append(frame)
+                        Y_emo.append(emo)
+                        Y_gen.append(gen)
+                        details.append(file_details)
+                else:
+                    X.append(audio)
+                    Y_emo.append(emo)
+                    Y_gen.append(gen)
+                    details.append(file_details)
 
     return np.array(X), to_categorical(Y_emo, num_classes=len(EMOTIONS)), to_categorical(Y_gen, num_classes=len(
         GENDERS)), np.array(details)
@@ -182,7 +193,9 @@ if __name__ == "__main__":
 
     print("restructured. \n saving...")
 
-    with open('signal-no-silent-{}-class-dataset-{}sec_sr_22k.pkl'.format(len(EMOTIONS), DURATION), 'wb') as f:
+    filename = 'signal-no-silent-{}-class-dataset-full_audio_sr_22k-greater-than-{}-seconds.pkl'.format(len(EMOTIONS),
+                                                                                                        AUDIO_LENGTH_FILTER)
+    with open(filename, 'wb') as f:
         pickle.dump(data, f)
-
+    print("saved: ", filename)
     print('end')

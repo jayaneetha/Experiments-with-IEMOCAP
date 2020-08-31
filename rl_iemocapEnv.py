@@ -2,7 +2,7 @@ import gym
 import numpy as np
 
 from constants import EMOTIONS, NUM_MFCC, NO_features
-from data import get_data, FeatureType
+from data import FeatureType, get_full_audio_data
 
 
 class IEMOCAPEnv(gym.Env):
@@ -42,13 +42,15 @@ class IEMOCAPEnv(gym.Env):
 
     def reset(self):
         self.itr = 0
+        self.set_data()
         return self.X[self.itr]
 
     def set_data(self):
         self.X = []
         self.Y = []
 
-        (x_train, y_train, y_gen_train), (x_test, y_emo_test, y_gen_test) = get_data(feature_types=[FeatureType.MFCC])
+        # (x_train, y_train, y_gen_train), (x_test, y_emo_testest, y_gen_test) = get_data(feature_types=[FeatureType.MFCC])
+        (x_train, y_train, y_gen_train) = get_full_audio_data(feature_types=[FeatureType.MFCC])
 
         self.X = np.array([d[FeatureType.MFCC.name] for d in x_train])
         self.Y = y_train
