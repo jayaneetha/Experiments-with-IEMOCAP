@@ -42,6 +42,7 @@ class IEMOCAPEnv(gym.Env):
 
     def reset(self):
         self.itr = 0
+        self.set_data()
         return self.X[self.itr]
 
     def set_data(self):

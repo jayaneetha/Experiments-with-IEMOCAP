@@ -10,7 +10,7 @@ from constants import NUM_MFCC, NO_features
 from rl.agents import DQNAgent
 from rl.callbacks import ModelIntervalCheckpoint, FileLogger, WandbLogger
 from rl.memory import SequentialMemory
-from rl.policy import MaxBoltzmannQPolicy
+from rl.policy import EpsGreedyQPolicy
 from rl_iemocapEnv import IEMOCAPEnv
 
 WINDOW_LENGTH = 1
@@ -26,7 +26,7 @@ tf.compat.v1.keras.backend.set_session(sess)
 def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=['train', 'test'], default='train')
-    parser.add_argument('--env-name', type=str, default='iemocap-rl_MaxBoltzmannQPolicy')
+    parser.add_argument('--env-name', type=str, default='iemocap-rl_v4-EpsGreedyQPolicy')
     parser.add_argument('--weights', type=str, default=None)
     args = parser.parse_args()
 
@@ -40,7 +40,7 @@ def run():
 
     # policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=.05,
     #                               nb_steps=1000000)
-    policy = MaxBoltzmannQPolicy()
+    policy = EpsGreedyQPolicy()
 
     dqn = DQNAgent(model=model, nb_actions=nb_actions, policy=policy, memory=memory,
                    nb_steps_warmup=50000, gamma=.99, target_model_update=10000,
@@ -55,7 +55,7 @@ def run():
         log_filename = 'rl-files/dqn_{}_log.json'.format(args.env_name)
         callbacks = [ModelIntervalCheckpoint(checkpoint_weights_filename, interval=250000)]
         callbacks += [FileLogger(log_filename, interval=100)]
-        callbacks += [WandbLogger(project='iemocap-rl')]
+        callbacks += [WandbLogger(project='iemocap-rl-v4')]
         dqn.fit(env, callbacks=callbacks, nb_steps=1750000, log_interval=10000)
 
         # After training is done, we save the final weights one more time.
