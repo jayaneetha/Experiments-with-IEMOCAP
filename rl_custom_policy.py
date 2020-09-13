@@ -51,7 +51,7 @@ class CustomPolicy(Policy):
         return action
 
     def get_config(self):
-        """Return configurations of BoltzmannQPolicy
+        """Return configurations of CustomPolicy
 
         # Returns
             Dict of config
