@@ -93,6 +93,15 @@ class CustomPolicyBasedOnMaxBoltzmann(Policy):
         q_values = q_values.astype('float64')
         nb_actions = q_values.shape[0]
 
+        def get_action_from_maxboltzmann(q, tau, clip, eps):
+            if np.random.uniform() < eps:
+                exp_values = np.exp(np.clip(q / tau, clip[0], clip[1]))
+                probs = exp_values / np.sum(exp_values)
+                a = np.random.choice(range(nb_actions), p=probs)
+            else:
+                a = np.argmax(q_values)
+            return a
+
         def get_action_from_boltzmann(q, tau, clip, eps):
             if np.random.uniform() < eps:
                 exp_values = np.exp(np.clip(q / tau, clip[0], clip[1]))
@@ -103,7 +112,7 @@ class CustomPolicyBasedOnMaxBoltzmann(Policy):
             return a
 
         if self.zeta < .5:
-            action = get_action_from_boltzmann(q_values, self.tau, self.clip, self.eps)
+            action = get_action_from_maxboltzmann(q_values, self.tau, self.clip, self.eps)
         else:
             if np.random.uniform() < self.eps:
                 action = get_action_from_boltzmann(q_values, self.tau, self.clip, self.eps)
