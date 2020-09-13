@@ -3,7 +3,8 @@ import numpy as np
 from enum import Enum
 
 from Framework import get_dataset, randomize_split
-from constants import NUM_MFCC, EMOTIONS, SR
+from constants import NUM_MFCC, EMOTIONS, SR, DURATION
+from legacy.convert_iemocap_dataset_to_pkl import split_audio
 
 
 class FeatureType(Enum):
@@ -81,3 +82,33 @@ def _get_feature(feature_type: FeatureType, signal):
 
     if feature_type == FeatureType.RAW:
         return signal
+
+
+def get_full_audio_data(feature_types: [FeatureType]):
+    data = get_dataset(
+        "signal-no-silent-{}-class-dataset-full_audio_sr_22k-greater-than-6-seconds.pkl".format(len(EMOTIONS)))
+
+    np.random.shuffle(data)
+
+    signal_frames = split_audio(data[0]['x'], SR, DURATION)
+
+    while len(signal_frames) < 3:
+        np.random.shuffle(data)
+        signal_frames = split_audio(data[0]['x'], SR, DURATION)
+
+    x = []
+    y_emo = []
+    y_gen = []
+
+    for f in signal_frames:
+        features = {}
+
+        for feature_type in feature_types:
+            feature = _get_feature(feature_type, f)
+            features[feature_type.name] = feature
+
+        x.append(features)
+        y_emo.append(data[0]['emo'])
+        y_gen.append(data[0]['gen'])
+
+    return (np.array(x), np.array(y_emo), np.array(y_gen))
