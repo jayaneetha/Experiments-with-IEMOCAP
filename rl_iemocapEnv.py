@@ -1,15 +1,21 @@
 import gym
 import numpy as np
+from enum import Enum
 
 from constants import EMOTIONS, NUM_MFCC, NO_features
-from data import FeatureType
+from data import FeatureType, get_data
 from inmemdatastore import InMemDatastore
+
+
+class DataVersions(Enum):
+    V3 = 0,  # ONE-AUDIO-ONE-EPISODE
+    V4 = 1
 
 
 class IEMOCAPEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self) -> None:
+    def __init__(self, data_version) -> None:
         super().__init__()
         self.itr = 0
 
@@ -17,7 +23,10 @@ class IEMOCAPEnv(gym.Env):
         self.Y = []
         self.num_classes = len(EMOTIONS)
 
-        self.datastore: InMemDatastore = InMemDatastore(FeatureType.MFCC)
+        self.data_version = data_version
+
+        if data_version == DataVersions.V3:
+            self.datastore: InMemDatastore = InMemDatastore(FeatureType.MFCC)
 
         self.set_data()
 
@@ -52,11 +61,14 @@ class IEMOCAPEnv(gym.Env):
         self.X = []
         self.Y = []
 
-        # (x_train, y_train, y_gen_train), (x_test, y_emo_testest, y_gen_test) = get_data(feature_types=[FeatureType.MFCC])
-        # (x_train, y_train, y_gen_train) = get_full_audio_data(feature_types=[FeatureType.MFCC])
+        if self.data_version == DataVersions.V4:
+            (x_train, y_train, y_gen_train), (x_test, y_emo_test, y_gen_test) = get_data(
+                feature_types=[FeatureType.MFCC])
+            self.X = np.array([d[FeatureType.MFCC.name] for d in x_train])
+            self.Y = y_train
 
-        (x_train, y_train, y_gen_train) = self.datastore.get_data()
-
-        assert len(x_train) == len(y_train)
-        self.X = np.array([d[FeatureType.MFCC.name] for d in x_train])
-        self.Y = y_train
+        if self.data_version == DataVersions.V3:
+            (x_train, y_train, y_gen_train) = self.datastore.get_data()
+            assert len(x_train) == len(y_train)
+            self.X = np.array([d[FeatureType.MFCC.name] for d in x_train])
+            self.Y = y_train
