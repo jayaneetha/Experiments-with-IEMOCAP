@@ -120,7 +120,7 @@ class CustomPolicyBasedOnMaxBoltzmann(Policy):
             action = get_action_from_maxboltzmann(q_values, self.tau, self.clip, self.eps)
         else:
             if np.random.uniform() < self.eps:
-                action = get_action_from_boltzmann(q_values, self.tau, self.clip)
+                action = np.random.randint(0, nb_actions)
             else:
                 action = np.argmax(q_values)
 

@@ -36,7 +36,7 @@ def parse_args(args):
 
     if args.policy == 'LinearAnnealedPolicy':
         pol = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=0.05,
-                                   nb_steps=1000000)
+                                   nb_steps=args.zeta_nb_steps)
     if args.policy == 'SoftmaxPolicy':
         pol = SoftmaxPolicy()
     if args.policy == 'EpsGreedyQPolicy':
@@ -51,8 +51,8 @@ def parse_args(args):
         pol = BoltzmannGumbelQPolicy()
     if args.policy == 'CustomPolicy':
         pol = CustomPolicy()
-    if args.policy == 'CustomPolicyBasedOnMaxBoltzmann':
-        pol = CustomPolicyBasedOnMaxBoltzmann(zeta_nb_steps=args.zeta_nb_steps)
+    if args.policy == 'CustomPolicyBasedOnMaxBoltzmann' or args.policy == 'zetapolicy':
+        pol = CustomPolicyBasedOnMaxBoltzmann(zeta_nb_steps=args.zeta_nb_steps, eps=args.eps)
 
     return dv, pol
 
@@ -66,14 +66,21 @@ def run():
     parser.add_argument('--data-version', choices=['v4', 'v3'], type=str, default='v4')
     parser.add_argument('--disable-wandb', type=bool, default=False)
     parser.add_argument('--zeta-nb-steps', type=int, default=1000000)
+    parser.add_argument('--eps', type=float, default=0.1)
     args = parser.parse_args()
 
     data_version, policy = parse_args(args)
 
     print("Starting ...\n\tPolicy: {}\n\tData Version: {}\n\tEnvironment: {}".format(args.policy, args.data_version,
                                                                                      args.env_name))
-
     env = IEMOCAPEnv(data_version)
+    for k in args.__dict__.keys():
+        print("\t{} :\t{}".format(k, args.__dict__[k]))
+        env.__setattr__("_" + k, args.__dict__[k])
+
+    exp_name = "P-{}-S-{}-e-{}".format(args.policy, args.zeta_nb_steps, args.eps)
+    env.__setattr__("_experiment", exp_name)
+
     nb_actions = env.action_space.n
 
     input_layer = Input(shape=(1, NUM_MFCC, NO_features))
@@ -94,15 +101,15 @@ def run():
     if args.mode == 'train':
         # Okay, now it's time to learn something! We capture the interrupt exception so that training
         # can be prematurely aborted. Notice that now you can use the built-in Keras callbacks!
-        weights_filename = 'rl-files/dqn_{}_weights.h5f'.format(args.env_name)
-        checkpoint_weights_filename = 'rl-files/dqn_' + args.env_name + '_weights_{step}.h5f'
-        log_filename = 'rl-files/dqn_{}_log.json'.format(args.env_name)
+        weights_filename = 'rl-files/models/dqn_{}_weights.h5f'.format(args.env_name)
+        checkpoint_weights_filename = 'rl-files/models/dqn_' + args.env_name + '_weights_{step}.h5f'
+        log_filename = 'rl-files/logs/dqn_{}_log.json'.format(args.env_name)
         callbacks = [ModelIntervalCheckpoint(checkpoint_weights_filename, interval=250000)]
         callbacks += [FileLogger(log_filename, interval=100)]
 
         if not args.disable_wandb:
             project_name = 'iemocap-rl-' + args.data_version
-            callbacks += [WandbLogger(project=project_name, name=args.policy)]
+            callbacks += [WandbLogger(project=project_name, name=args.env_name)]
 
         dqn.fit(env, callbacks=callbacks, nb_steps=1750000, log_interval=10000)
 

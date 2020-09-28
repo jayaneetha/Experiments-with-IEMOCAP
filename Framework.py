@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 from keras import Model
 from keras.callbacks import EarlyStopping, ModelCheckpoint, CSVLogger
+from os import path
 from sklearn.metrics import confusion_matrix
 
 from constants import EMOTIONS, WEEK
@@ -183,6 +184,22 @@ def get_confusion_matrix(model: Model, x_test, y_test, prediction_index=None):
 
 
 def get_dataset(filename='signal-dataset.pkl'):
+    if not path.exists(filename):
+        download(filename)
+
     with open(filename, 'rb') as f:
         data = pickle.load(f)
         return data
+
+
+def download(filename, base_url='https://s3-ap-southeast-1.amazonaws.com/usq.iothealth/iemocap/'):
+    import urllib.request
+
+    url = base_url + filename
+
+    print('Beginning file download {}'.format(url))
+
+    store_file = './' + filename
+    urllib.request.urlretrieve(url, store_file)
+
+    print("Downloaded and saved to file: {}".format(store_file))
