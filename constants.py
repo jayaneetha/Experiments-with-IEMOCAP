@@ -3,11 +3,17 @@ import socket
 host = socket.gethostname()
 
 # environment specific constants
+
+DATA_ROOT = '/iemocap'
+
 if host == 'asimov':
     DATA_ROOT = '/data/aq/shared/iemocap/IEMOCAP_full_release'
 
 if host == 'Thejans-MacBook-Pro.local':
     DATA_ROOT = '/Volumes/Kingston/datasets/audio/iemocap'
+
+if host == 'thejanr-u20dt':
+    DATA_ROOT = '/home/jayaneetha/iotheath/data/iemocap'
 
 # EMOTIONS = ['neu', 'hap', 'sad', 'ang', 'sur', 'fea', 'dis', 'fru', 'exc', 'oth', 'xxx']
 # EMOTIONS = ['neu', 'hap', 'sad', 'ang', 'fru', 'exc']
