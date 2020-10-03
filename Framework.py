@@ -199,7 +199,7 @@ def download(filename, base_url='https://s3-ap-southeast-1.amazonaws.com/usq.iot
 
     print('Beginning file download {}'.format(url))
 
-    store_file = './' + PKL_ROOT + filename
+    store_file = PKL_ROOT + filename
     urllib.request.urlretrieve(url, store_file)
 
     print("Downloaded and saved to file: {}".format(store_file))
