@@ -2,6 +2,9 @@ FROM tensorflow/tensorflow:1.14.0-py3
 
 RUN mkdir /iemocap
 RUN mkdir /iemocap/pkl
+RUN mkdir /iemocap/rl-files
+RUN mkdir /iemocap/rl-files/logs
+RUN mkdir /iemocap/rl-files/models
 
 ADD . /iemocap/
 COPY .netrc /root/.netrc
