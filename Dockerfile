@@ -14,3 +14,6 @@ WORKDIR /iemocap
 RUN cd /iemocap
 RUN pip install -r requirements.txt
 RUN export WANDB_API_KEY=5dd532fa8e46bf1d25a597f96c118bbfe549a807
+ENV WANDB_API_KEY=5dd532fa8e46bf1d25a597f96c118bbfe549a807
+
+CMD ${RUN_CMD}
