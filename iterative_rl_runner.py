@@ -2,7 +2,7 @@ import argparse
 
 from googlesheet import GoogleSheetService, get_row_number
 
-SAMPLE_SPREADSHEET_ID = '1TpceCGWnEqansqw0rrLAHz-xUWEVj7Qgri9Zic6osws'
+SAMPLE_SPREADSHEET_ID = '1aWqtGXlQOz_RpNFgCVJ9ACyQeDKOUVHDUafdbUnPzeY'
 gss = None
 
 
