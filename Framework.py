@@ -184,11 +184,10 @@ def get_confusion_matrix(model: Model, x_test, y_test, prediction_index=None):
 
 
 def get_dataset(filename='signal-dataset.pkl'):
-    filename = PKL_ROOT + filename
-    if not path.exists(filename):
+    if not path.exists(PKL_ROOT + filename):
         download(filename)
 
-    with open(filename, 'rb') as f:
+    with open(PKL_ROOT + filename, 'rb') as f:
         data = pickle.load(f)
         return data
 
@@ -200,7 +199,7 @@ def download(filename, base_url='https://s3-ap-southeast-1.amazonaws.com/usq.iot
 
     print('Beginning file download {}'.format(url))
 
-    store_file = './' + filename
+    store_file = './' + PKL_ROOT + filename
     urllib.request.urlretrieve(url, store_file)
 
     print("Downloaded and saved to file: {}".format(store_file))
