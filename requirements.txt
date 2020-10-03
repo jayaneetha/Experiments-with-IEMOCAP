@@ -131,7 +131,7 @@ soupsieve==2.0
 speechpy==2.4
 subprocess32==3.5.4
 tensorboard==1.14.0
-tensorflow==1.14.0
+tensorflow==1.15.4
 tensorflow-estimator==1.14.0
 tensorflow-hub==0.6.0
 termcolor==1.1.0
