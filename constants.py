@@ -5,6 +5,7 @@ host = socket.gethostname()
 # environment specific constants
 
 DATA_ROOT = '/iemocap'
+PKL_ROOT = '/iemocap/pkl/'
 
 if host == 'asimov':
     DATA_ROOT = '/data/aq/shared/iemocap/IEMOCAP_full_release'

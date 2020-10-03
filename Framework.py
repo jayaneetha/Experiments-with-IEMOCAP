@@ -1,14 +1,14 @@
 import datetime
 import pickle
+from os import path
 
 import numpy as np
 import tensorflow as tf
 from keras import Model
 from keras.callbacks import EarlyStopping, ModelCheckpoint, CSVLogger
-from os import path
 from sklearn.metrics import confusion_matrix
 
-from constants import EMOTIONS, WEEK
+from constants import EMOTIONS, WEEK, PKL_ROOT
 
 
 def train(model: Model, x: [], y: [], EPOCHS: int, batch_size=4, early_stopping=True,
@@ -184,6 +184,7 @@ def get_confusion_matrix(model: Model, x_test, y_test, prediction_index=None):
 
 
 def get_dataset(filename='signal-dataset.pkl'):
+    filename = PKL_ROOT + filename
     if not path.exists(filename):
         download(filename)
 
