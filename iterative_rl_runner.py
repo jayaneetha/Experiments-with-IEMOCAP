@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from googlesheet import GoogleSheetService, get_row_number
 
@@ -8,8 +9,8 @@ gss = None
 
 def run_experiment(row):
     print(row.command)
-    # os.system(row.command)
-    raise Exception('sdf')
+    os.system(row.command)
+    # raise Exception('sdf')
 
 
 def main():
