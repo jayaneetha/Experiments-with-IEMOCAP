@@ -28,7 +28,7 @@ def main():
         if row is not None:
             row_number = get_row_number(row)
             gss.update_status('running', row_number)
-            gss.update_tmux(tmux_name, row_number)
+            gss.update_tmux("{}_job:{}".format(tmux_name, str(job)), row_number)
             try:
                 run_experiment(row)
             except:

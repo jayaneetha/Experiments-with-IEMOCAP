@@ -1,0 +1,1 @@
+docker run -v $(pwd)/pkl:/iemocap/pkl -v $(pwd)/rl-files:/iemocap/rl-files -it -e RUN_CMD="python iterative_rl_runner.py --tmux=docker_112" jayaneetha/iothealth-iemocap-rl:latest

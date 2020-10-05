@@ -9,12 +9,14 @@ PKL_ROOT = '/iemocap/pkl/'
 
 if host == 'asimov':
     DATA_ROOT = '/data/aq/shared/iemocap/IEMOCAP_full_release'
+    PKL_ROOT = '/home/u1116888/projects/iemocap_dataset/'
 
 if host == 'Thejans-MacBook-Pro.local':
     DATA_ROOT = '/Volumes/Kingston/datasets/audio/iemocap'
 
 if host == 'thejanr-u20dt':
     DATA_ROOT = '/home/jayaneetha/iotheath/data/iemocap'
+    PKL_ROOT = '/home/jayaneetha/iotheath/iemocap_dataset/'
 
 # EMOTIONS = ['neu', 'hap', 'sad', 'ang', 'sur', 'fea', 'dis', 'fru', 'exc', 'oth', 'xxx']
 # EMOTIONS = ['neu', 'hap', 'sad', 'ang', 'fru', 'exc']
