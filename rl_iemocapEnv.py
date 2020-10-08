@@ -2,8 +2,10 @@ import gym
 import numpy as np
 from enum import Enum
 
+from Datastore import Datastore
+from V4Dataset import V4Datastore
 from constants import EMOTIONS, NUM_MFCC, NO_features
-from data import FeatureType, get_data
+from data import FeatureType
 from inmemdatastore import InMemDatastore
 
 
@@ -25,8 +27,13 @@ class IEMOCAPEnv(gym.Env):
 
         self.data_version = data_version
 
+        self.datastore: Datastore
+
         if data_version == DataVersions.V3:
-            self.datastore: InMemDatastore = InMemDatastore(FeatureType.MFCC)
+            self.datastore = InMemDatastore(FeatureType.MFCC)
+
+        if data_version == DataVersions.V4:
+            self.datastore = V4Datastore(FeatureType.MFCC)
 
         self.set_data()
 
@@ -62,9 +69,10 @@ class IEMOCAPEnv(gym.Env):
         self.Y = []
 
         if self.data_version == DataVersions.V4:
-            (x_train, y_train, y_gen_train), (x_test, y_emo_test, y_gen_test) = get_data(
-                feature_types=[FeatureType.MFCC])
-            self.X = np.array([d[FeatureType.MFCC.name] for d in x_train])
+            (x_train, y_train, y_gen_train), (x_test, y_emo_test, y_gen_test) = self.datastore.get_data()
+            # self.X = np.array([d[FeatureType.MFCC.name] for d in x_train])
+            assert len(x_train) == len(y_train)
+            self.X = x_train
             self.Y = y_train
 
         if self.data_version == DataVersions.V3:

@@ -1,13 +1,14 @@
 import numpy as np
 import random
 
+from Datastore import Datastore
 from Framework import get_dataset
 from constants import EMOTIONS, SR, DURATION
 from data import FeatureType, _get_feature
 from legacy.convert_iemocap_dataset_to_pkl import split_audio
 
 
-class InMemDatastore:
+class InMemDatastore(Datastore):
     def __init__(self, feature_type: FeatureType):
         print("Initializing Datastore")
 

@@ -16,13 +16,14 @@ class FeatureType(Enum):
     PITCH = 6
 
 
-def get_data(feature_types: [FeatureType.MFCC]):
+def get_data(feature_types: [FeatureType.MFCC], data=None, process_test_set=False):
     # data = get_dataset("signal-{}-class-dataset-4sec.pkl".format(len(EMOTIONS)))
     # data = get_dataset("signal-{}-class-dataset-4sec_sr_8k.pkl".format(len(EMOTIONS)))
     # data = get_dataset("signal-{}-class-dataset-8sec_sr_16k.pkl".format(len(EMOTIONS)))
     # data = get_dataset("signal-{}-class-dataset-2sec_sr_16k.pkl".format(len(EMOTIONS)))
     # data = get_dataset("signal-no-silent-{}-class-dataset-2sec_sr_16k.pkl".format(len(EMOTIONS)))
-    data = get_dataset("signal-no-silent-{}-class-dataset-2sec_sr_22k.pkl".format(len(EMOTIONS)))
+    if data is None:
+        data = get_dataset("signal-no-silent-{}-class-dataset-2sec_sr_22k.pkl".format(len(EMOTIONS)))
 
     training_data, testing_data = randomize_split(data)
     x_train, y_emo_train, y_gen_train = [], [], []
@@ -43,20 +44,22 @@ def get_data(feature_types: [FeatureType.MFCC]):
     y_gen_train = np.array(y_gen_train)
 
     x_test, y_emo_test, y_gen_test = [], [], []
-    for d in testing_data:
-        testing_features = {}
 
-        for feature_type in feature_types:
-            feature = _get_feature(feature_type, d['x'])
-            testing_features[feature_type.name] = feature
+    if process_test_set:
+        for d in testing_data:
+            testing_features = {}
 
-        x_test.append(testing_features)
-        y_emo_test.append(d['emo'])
-        y_gen_test.append(d['gen'])
+            for feature_type in feature_types:
+                feature = _get_feature(feature_type, d['x'])
+                testing_features[feature_type.name] = feature
 
-    x_test = np.array(x_test)
-    y_emo_test = np.array(y_emo_test)
-    y_gen_test = np.array(y_gen_test)
+            x_test.append(testing_features)
+            y_emo_test.append(d['emo'])
+            y_gen_test.append(d['gen'])
+
+        x_test = np.array(x_test)
+        y_emo_test = np.array(y_emo_test)
+        y_gen_test = np.array(y_gen_test)
 
     return (x_train, y_emo_train, y_gen_train), (x_test, y_emo_test, y_gen_test)
 
