@@ -13,6 +13,7 @@ if host == 'asimov':
 
 if host == 'Thejans-MacBook-Pro.local':
     DATA_ROOT = '/Volumes/Kingston/datasets/audio/iemocap'
+    PKL_ROOT = '/Users/jayaneetha/PycharmProjects/iemocap_dataset/pkl/'
 
 if host == 'thejanr-u20dt':
     DATA_ROOT = '/home/jayaneetha/iotheath/data/iemocap'
@@ -34,3 +35,8 @@ NO_features = 87  # sr22050&2sec
 # NO_features = 251  # sr16000&8sec
 
 WEEK = str(6)
+
+# SAVEE CONSTANTS
+SAVEE_SR = 44100
+SAVEE_DURATION = 3
+SAVEE_NO_features = 259

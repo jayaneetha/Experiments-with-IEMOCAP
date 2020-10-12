@@ -1,12 +1,12 @@
 import argparse
-
 import os
+
 import tensorflow as tf
 from keras import Input
 from keras.optimizers import Adam
 
 import models
-from constants import NUM_MFCC, NO_features
+from constants import NUM_MFCC, NO_features, SAVEE_NO_features
 from rl.agents import DQNAgent
 from rl.callbacks import ModelIntervalCheckpoint, FileLogger, WandbLogger
 from rl.memory import SequentialMemory
@@ -14,6 +14,7 @@ from rl.policy import MaxBoltzmannQPolicy, Policy, LinearAnnealedPolicy, EpsGree
     BoltzmannQPolicy, BoltzmannGumbelQPolicy
 from rl_custom_policy import CustomPolicy, CustomPolicyBasedOnMaxBoltzmann
 from rl_iemocapEnv import IEMOCAPEnv, DataVersions
+from rl_saveeEnv import SAVEEEnv
 
 WINDOW_LENGTH = 1
 
@@ -33,6 +34,8 @@ def parse_args(args):
         dv = DataVersions.V3
     if args.data_version == 'v4':
         dv = DataVersions.V4
+    if args.data_version == 'savee':
+        dv = DataVersions.Vsavee
 
     if args.policy == 'LinearAnnealedPolicy':
         pol = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=0.05,
@@ -63,7 +66,7 @@ def run():
     parser.add_argument('--env-name', type=str, default='iemocap-rl-v3.1')
     parser.add_argument('--weights', type=str, default=None)
     parser.add_argument('--policy', type=str, default='EpsGreedyQPolicy')
-    parser.add_argument('--data-version', choices=['v4', 'v3'], type=str, default='v4')
+    parser.add_argument('--data-version', choices=['v4', 'v3', 'savee'], type=str, default='v4')
     parser.add_argument('--disable-wandb', type=bool, default=False)
     parser.add_argument('--zeta-nb-steps', type=int, default=1000000)
     parser.add_argument('--eps', type=float, default=0.1)
@@ -73,7 +76,15 @@ def run():
 
     print("Starting ...\n\tPolicy: {}\n\tData Version: {}\n\tEnvironment: {}".format(args.policy, args.data_version,
                                                                                      args.env_name))
-    env = IEMOCAPEnv(data_version)
+
+    env = None
+
+    if data_version == DataVersions.V4 or data_version == DataVersions.V3:
+        env = IEMOCAPEnv(data_version)
+
+    if data_version == DataVersions.Vsavee:
+        env = SAVEEEnv(data_version)
+
     for k in args.__dict__.keys():
         print("\t{} :\t{}".format(k, args.__dict__[k]))
         env.__setattr__("_" + k, args.__dict__[k])
@@ -84,6 +95,9 @@ def run():
     nb_actions = env.action_space.n
 
     input_layer = Input(shape=(1, NUM_MFCC, NO_features))
+    if data_version == DataVersions.Vsavee:
+        input_layer = Input(shape=(1, NUM_MFCC, SAVEE_NO_features))
+
     model = models.get_model_9_rl(input_layer, model_name_prefix='mfcc')
 
     memory = SequentialMemory(limit=1000000, window_length=WINDOW_LENGTH)
@@ -109,6 +123,10 @@ def run():
 
         if not args.disable_wandb:
             project_name = 'iemocap-rl-' + args.data_version
+
+            if data_version == DataVersions.Vsavee:
+                project_name = 'iemocap-rl-v4'
+
             callbacks += [WandbLogger(project=project_name, name=args.env_name)]
 
         dqn.fit(env, callbacks=callbacks, nb_steps=1750000, log_interval=10000)
