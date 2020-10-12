@@ -2,14 +2,13 @@ import gym
 import numpy as np
 
 from Datastore import Datastore
-from V4Dataset import V4Datastore
 from constants import EMOTIONS, NUM_MFCC, NO_features
 from data import FeatureType
 from data_versions import DataVersions
-from inmemdatastore import InMemDatastore
+from savee_datastore import SAVEEDatastore
 
 
-class IEMOCAPEnv(gym.Env):
+class SAVEEEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self, data_version) -> None:
@@ -24,11 +23,8 @@ class IEMOCAPEnv(gym.Env):
 
         self.datastore: Datastore
 
-        if data_version == DataVersions.V3:
-            self.datastore = InMemDatastore(FeatureType.MFCC)
-
-        if data_version == DataVersions.V4:
-            self.datastore = V4Datastore(FeatureType.MFCC)
+        if data_version == DataVersions.Vsavee:
+            self.datastore = SAVEEDatastore(FeatureType.MFCC)
 
         self.set_data()
 
@@ -63,15 +59,9 @@ class IEMOCAPEnv(gym.Env):
         self.X = []
         self.Y = []
 
-        if self.data_version == DataVersions.V4:
+        if self.data_version == DataVersions.Vsavee:
             (x_train, y_train, y_gen_train), (x_test, y_emo_test, y_gen_test) = self.datastore.get_data()
             # self.X = np.array([d[FeatureType.MFCC.name] for d in x_train])
             assert len(x_train) == len(y_train)
             self.X = x_train
-            self.Y = y_train
-
-        if self.data_version == DataVersions.V3:
-            (x_train, y_train, y_gen_train) = self.datastore.get_data()
-            assert len(x_train) == len(y_train)
-            self.X = np.array([d[FeatureType.MFCC.name] for d in x_train])
             self.Y = y_train
