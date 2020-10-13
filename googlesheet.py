@@ -13,7 +13,7 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # The ID and range of a sample spreadsheet.
 # SAMPLE_SPREADSHEET_ID = '1TpceCGWnEqansqw0rrLAHz-xUWEVj7Qgri9Zic6osws'
-SAMPLE_RANGE_NAME = 'Sheet1!A2:J'
+SAMPLE_RANGE_NAME = 'Sheet1!A2:K'
 value_input_option = 'RAW'
 
 
@@ -74,7 +74,7 @@ class GoogleSheetService:
     def convert_to_df(self, values: list):
         d = pd.DataFrame(values)
         d.columns = ['Experiment', 'Policy', 'Data', 'zeta_nb_steps', 'eps', 'env_suffix', 'envname', 'tmux', 'status',
-                     'command']
+                     'priority', 'command']
 
         return d
 
@@ -83,8 +83,11 @@ class GoogleSheetService:
             df = self.get_google_sheet()
 
         pendings = df[df['status'] == 'pending']
-        if len(pendings) > 0:
-            r = pendings.iloc[0]
+
+        sorted_pendings = pendings.sort_values(by=['priority', 'Experiment'], ascending=[False, True])
+
+        if len(sorted_pendings) > 0:
+            r = sorted_pendings.iloc[0]
             return r
         else:
             return None

@@ -17,12 +17,14 @@ def main():
     print("Start")
     parser = argparse.ArgumentParser()
     parser.add_argument('--tmux', type=str)
+    parser.add_argument('--num-jobs', type=int, default=5)
     args = parser.parse_args()
     tmux_name = args.tmux
+    num_jobs = args.num_jobs
 
     gss = GoogleSheetService(SAMPLE_SPREADSHEET_ID)
     row = None
-    for job in range(5):
+    for job in range(num_jobs):
         last_row = row
         row = gss.get_next_pending()
         if row is not None:
