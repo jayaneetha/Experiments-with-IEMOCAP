@@ -3,10 +3,10 @@ from __future__ import print_function
 
 import json
 import timeit
+import warnings
 
 import numpy as np
 import wandb
-import warnings
 from keras import __version__ as KERAS_VERSION
 from keras.callbacks import Callback as KerasCallback, CallbackList as KerasCallbackList
 from keras.utils.generic_utils import Progbar
@@ -308,6 +308,7 @@ class FileLogger(Callback):
         self.starts = {}
         self.data = {}
         self.rewards = {}
+        self.used_data_counts = {}
 
     def on_train_begin(self, logs):
         """ Initialize model metrics before training """
@@ -324,6 +325,7 @@ class FileLogger(Callback):
         self.metrics[episode] = []
         self.starts[episode] = timeit.default_timer()
         self.rewards[episode] = []
+        self.used_data_counts[episode] = []
 
     def on_episode_end(self, episode, logs):
         """ Compute and print metrics at the end of each episode """
@@ -340,6 +342,7 @@ class FileLogger(Callback):
         data += list(logs.items())
         data += [('episode', episode), ('duration', duration)]
         data += [('reward_mean', np.mean(self.rewards[episode])), ('reward_std', np.std(self.rewards[episode]))]
+        data += [('used_data_count_max', np.max(self.used_data_counts[episode]))]
         for key, value in data:
             if key not in self.data:
                 self.data[key] = []
@@ -352,12 +355,15 @@ class FileLogger(Callback):
         del self.metrics[episode]
         del self.starts[episode]
         del self.rewards[episode]
+        del self.used_data_counts[episode]
 
     def on_step_end(self, step, logs):
         """ Append metric at the end of each step """
         episode = logs['episode']
         self.metrics[episode].append(logs['metrics'])
         self.rewards[episode].append(logs['reward'])
+        if 'used_data_count' in logs:
+            self.used_data_counts[episode].append(int(logs['used_data_count']))
 
     def save_data(self):
         """ Save metrics in a json file """
@@ -424,6 +430,7 @@ class WandbLogger(Callback):
         self.rewards = {}
         self.actions = {}
         self.metrics = {}
+        self.used_data_counts = {}
         self.step = 0
 
     def on_train_begin(self, logs):
@@ -444,6 +451,7 @@ class WandbLogger(Callback):
         self.rewards[episode] = []
         self.actions[episode] = []
         self.metrics[episode] = []
+        self.used_data_counts[episode] = []
 
     def on_episode_end(self, episode, logs):
         """ Compute and log training statistics of the episode when done """
@@ -460,7 +468,7 @@ class WandbLogger(Callback):
                 except Warning:
                     metrics_dict[name] = float('nan')
 
-        wandb.log({
+        log_obj = {
             'step': self.step,
             'episode': episode + 1,
             'duration': duration,
@@ -477,8 +485,11 @@ class WandbLogger(Callback):
             'obs_mean': np.mean(self.observations[episode]),
             'obs_min': np.min(self.observations[episode]),
             'obs_max': np.max(self.observations[episode]),
+            'used_data_count_max': np.max(self.used_data_counts[episode]),
             **metrics_dict
-        })
+        }
+
+        wandb.log(log_obj)
 
         # Free up resources.
         del self.episode_start[episode]
@@ -486,6 +497,7 @@ class WandbLogger(Callback):
         del self.rewards[episode]
         del self.actions[episode]
         del self.metrics[episode]
+        del self.used_data_counts[episode]
 
     def on_step_end(self, step, logs):
         """ Update statistics of episode after each step """
@@ -494,4 +506,8 @@ class WandbLogger(Callback):
         self.rewards[episode].append(logs['reward'])
         self.actions[episode].append(logs['action'])
         self.metrics[episode].append(logs['metrics'])
+
+        if 'used_data_count' in logs:
+            self.used_data_counts[episode].append(int(logs['used_data_count']))
+
         self.step += 1

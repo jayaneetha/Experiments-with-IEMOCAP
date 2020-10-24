@@ -1,11 +1,13 @@
 import gym
 import numpy as np
+import pandas as pd
 
 from Datastore import Datastore
 from V4Dataset import V4Datastore
 from constants import EMOTIONS, NUM_MFCC, NO_features
 from data import FeatureType
 from data_versions import DataVersions
+from hashing_util import get_hash
 from inmemdatastore import InMemDatastore
 
 
@@ -35,6 +37,10 @@ class IEMOCAPEnv(gym.Env):
         self.action_space = gym.spaces.Discrete(self.num_classes)
         self.observation_space = gym.spaces.Box(-1, 1, [NUM_MFCC, NO_features])
 
+        self.data_hashes = pd.DataFrame(self.datastore.get_data_hash_list())
+        self.data_hashes['used'] = False
+        self.data_hashes.columns = ['file_hash', 'used']
+
     def step(self, action):
         assert self.action_space.contains(action)
         reward = -0.1 + int(action == np.argmax(self.Y[self.itr]))
@@ -43,9 +49,15 @@ class IEMOCAPEnv(gym.Env):
         done = (len(self.X) - 2 <= self.itr)
 
         next_state = self.X[self.itr + 1]
+
+        h = get_hash(next_state)
+        idx = self.data_hashes.index[self.data_hashes['file_hash'] == h]
+        self.data_hashes.at[idx, 'used'] = True
+
         info = {
             "ground_truth": np.argmax(self.Y[self.itr]),
-            "itr": self.itr
+            "itr": self.itr,
+            "used_data_count": int(self.data_hashes[self.data_hashes['used'] == True].shape[0])
         }
         self.itr += 1
 

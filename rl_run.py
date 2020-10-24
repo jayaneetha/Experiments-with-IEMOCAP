@@ -127,6 +127,8 @@ def run():
             if data_version == DataVersions.Vsavee:
                 project_name = 'iemocap-rl-v4'
 
+            project_name = 'iemocap-rl-v4-failed'
+
             callbacks += [WandbLogger(project=project_name, name=args.env_name)]
 
         dqn.fit(env, callbacks=callbacks, nb_steps=1750000, log_interval=10000)

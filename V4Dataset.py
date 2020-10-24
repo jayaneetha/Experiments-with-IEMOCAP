@@ -4,6 +4,7 @@ from Datastore import Datastore
 from Framework import get_dataset, randomize_split
 from constants import EMOTIONS
 from data import FeatureType, _get_feature
+from hashing_util import get_hash
 
 
 class V4Datastore(Datastore):
@@ -32,3 +33,10 @@ class V4Datastore(Datastore):
         y_test_gen = np.array([d['y_gen'] for d in training_data])
 
         return (x_train_mfcc, y_train_emo, y_train_gen), (x_test_mfcc, y_test_emo, y_test_gen)
+
+    def get_data_hash_list(self):
+        hashes = []
+        mfccs = np.array([d[FeatureType.MFCC.name] for d in self.data])
+        for m in mfccs:
+            hashes.append(get_hash(m))
+        return np.array(hashes)

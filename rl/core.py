@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-import numpy as np
 import warnings
 from copy import deepcopy
+
+import numpy as np
 from keras.callbacks import History
 
 from rl.callbacks import (
@@ -209,6 +210,10 @@ class Agent(object):
                     'episode': episode,
                     'info': accumulated_info,
                 }
+
+                if 'used_data_count' in accumulated_info:
+                    step_logs['used_data_count'] = int(accumulated_info['used_data_count'])
+
                 callbacks.on_step_end(episode_step, step_logs)
                 episode_step += 1
                 self.step += 1
@@ -228,6 +233,10 @@ class Agent(object):
                         'nb_episode_steps': episode_step,
                         'nb_steps': self.step,
                     }
+
+                    if 'used_data_count' in accumulated_info:
+                        episode_logs['used_data_count'] = accumulated_info['used_data_count']
+
                     callbacks.on_episode_end(episode, episode_logs)
 
                     episode += 1
