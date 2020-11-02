@@ -1,6 +1,7 @@
 from __future__ import division
 
 import warnings
+
 from keras import Model
 from keras.layers import Lambda, Input, Layer, Dense
 
@@ -19,6 +20,7 @@ class AbstractDQNAgent(Agent):
 
     def __init__(self, nb_actions, memory, gamma=.99, batch_size=32, nb_steps_warmup=1000,
                  train_interval=1, memory_interval=1, target_model_update=10000,
+                 train_max_steps=440000,
                  delta_range=None, delta_clip=np.inf, custom_model_objects={}, **kwargs):
         super(AbstractDQNAgent, self).__init__(**kwargs)
 
@@ -48,6 +50,7 @@ class AbstractDQNAgent(Agent):
         self.target_model_update = target_model_update
         self.delta_clip = delta_clip
         self.custom_model_objects = custom_model_objects
+        self.train_max_steps = train_max_steps
 
         # Related objects.
         self.memory = memory
@@ -261,7 +264,7 @@ class DQNAgent(AbstractDQNAgent):
             return metrics
 
         # Train the network on a single stochastic batch.
-        if self.step > self.nb_steps_warmup and self.step % self.train_interval == 0:
+        if self.step > self.nb_steps_warmup and self.step % self.train_interval == 0 and self.step < self.train_max_steps:
             experiences = self.memory.sample(self.batch_size)
             assert len(experiences) == self.batch_size
 

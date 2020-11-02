@@ -69,6 +69,8 @@ def run():
     parser.add_argument('--data-version', choices=['v4', 'v3', 'savee'], type=str, default='v4')
     parser.add_argument('--disable-wandb', type=bool, default=False)
     parser.add_argument('--zeta-nb-steps', type=int, default=1000000)
+    parser.add_argument('--nb-steps', type=int, default=500000)
+    parser.add_argument('--max-train-steps', type=int, default=440000)
     parser.add_argument('--eps', type=float, default=0.1)
     args = parser.parse_args()
 
@@ -109,7 +111,7 @@ def run():
 
     dqn = DQNAgent(model=model, nb_actions=nb_actions, policy=policy, memory=memory,
                    nb_steps_warmup=50000, gamma=.99, target_model_update=10000,
-                   train_interval=4, delta_clip=1.)
+                   train_interval=4, delta_clip=1., train_max_steps=args.max_train_steps)
     dqn.compile(Adam(lr=.00025), metrics=['mae'])
 
     if args.mode == 'train':
@@ -127,11 +129,9 @@ def run():
             if data_version == DataVersions.Vsavee:
                 project_name = 'iemocap-rl-v4'
 
-            project_name = 'iemocap-rl-v4-failed'
-
             callbacks += [WandbLogger(project=project_name, name=args.env_name)]
 
-        dqn.fit(env, callbacks=callbacks, nb_steps=1750000, log_interval=10000)
+        dqn.fit(env, callbacks=callbacks, nb_steps=args.nb_steps, log_interval=10000)
 
         # After training is done, we save the final weights one more time.
         dqn.save_weights(weights_filename, overwrite=True)
