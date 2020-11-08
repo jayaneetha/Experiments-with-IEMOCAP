@@ -1,6 +1,6 @@
 import argparse
-import os
 
+import os
 import tensorflow as tf
 from keras import Input
 from keras.optimizers import Adam
@@ -72,6 +72,9 @@ def run():
     parser.add_argument('--nb-steps', type=int, default=500000)
     parser.add_argument('--max-train-steps', type=int, default=440000)
     parser.add_argument('--eps', type=float, default=0.1)
+    parser.add_argument('--pre-train', type=bool, default=False)
+    parser.add_argument('--warmup-steps', type=int, default=50000)
+    parser.add_argument('--pretrain-epochs', type=int, default=64)
     args = parser.parse_args()
 
     data_version, policy = parse_args(args)
@@ -110,9 +113,19 @@ def run():
     # policy = MaxBoltzmannQPolicy()
 
     dqn = DQNAgent(model=model, nb_actions=nb_actions, policy=policy, memory=memory,
-                   nb_steps_warmup=50000, gamma=.99, target_model_update=10000,
+                   nb_steps_warmup=args.warmup_steps, gamma=.99, target_model_update=10000,
                    train_interval=4, delta_clip=1., train_max_steps=args.max_train_steps)
     dqn.compile(Adam(lr=.00025), metrics=['mae'])
+
+    if args.pre_train:
+        from V4Dataset import V4Datastore
+        from data import FeatureType
+        datastore = V4Datastore(FeatureType.MFCC)
+
+        x_train, y_train, y_gen_train = datastore.get_pre_train_data()
+
+        dqn.pre_train(x=x_train.reshape((len(x_train), 1, 40, 87)), y=y_train, EPOCHS=args.pretrain_epochs,
+                      batch_size=128)
 
     if args.mode == 'train':
         # Okay, now it's time to learn something! We capture the interrupt exception so that training

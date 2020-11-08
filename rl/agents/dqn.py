@@ -1,7 +1,6 @@
 from __future__ import division
 
 import warnings
-
 from keras import Model
 from keras.layers import Lambda, Input, Layer, Dense
 
@@ -165,6 +164,17 @@ class DQNAgent(AbstractDQNAgent):
 
         # State.
         self.reset_states()
+
+    def pre_train(self, x, y, EPOCHS, batch_size=4):
+
+        print("Pre Training")
+        from legacy.Framework import train
+
+        history, trained_model = train(model=self.model, x=x, y=y, EPOCHS=EPOCHS, batch_size=batch_size)
+
+        print(history)
+
+        self.model = trained_model
 
     def get_config(self):
         config = super(DQNAgent, self).get_config()
