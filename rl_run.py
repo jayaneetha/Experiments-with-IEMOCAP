@@ -6,24 +6,18 @@ from keras import Input
 from keras.optimizers import Adam
 
 import models
-from constants import NUM_MFCC, NO_features, SAVEE_NO_features
+from constants import NUM_MFCC, NO_features, SAVEE_NO_features, IMPROV_NO_features
 from rl.agents import DQNAgent
 from rl.callbacks import ModelIntervalCheckpoint, FileLogger, WandbLogger
 from rl.memory import SequentialMemory
 from rl.policy import MaxBoltzmannQPolicy, Policy, LinearAnnealedPolicy, EpsGreedyQPolicy, SoftmaxPolicy, GreedyQPolicy, \
     BoltzmannQPolicy, BoltzmannGumbelQPolicy
+from rl_MSImprovEnv import ImprovEnv
 from rl_custom_policy import CustomPolicy, CustomPolicyBasedOnMaxBoltzmann
 from rl_iemocapEnv import IEMOCAPEnv, DataVersions
 from rl_saveeEnv import SAVEEEnv
 
 WINDOW_LENGTH = 1
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.1)
-config = tf.ConfigProto(gpu_options=gpu_options)
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config)
-tf.compat.v1.keras.backend.set_session(sess)
 
 
 def parse_args(args):
@@ -36,6 +30,8 @@ def parse_args(args):
         dv = DataVersions.V4
     if args.data_version == 'savee':
         dv = DataVersions.Vsavee
+    if args.data_version == 'improv':
+        dv = DataVersions.Vimprov
 
     if args.policy == 'LinearAnnealedPolicy':
         pol = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=0.05,
@@ -60,22 +56,41 @@ def parse_args(args):
     return dv, pol
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=['train', 'test'], default='train')
     parser.add_argument('--env-name', type=str, default='iemocap-rl-v3.1')
     parser.add_argument('--weights', type=str, default=None)
     parser.add_argument('--policy', type=str, default='EpsGreedyQPolicy')
-    parser.add_argument('--data-version', choices=['v4', 'v3', 'savee'], type=str, default='v4')
-    parser.add_argument('--disable-wandb', type=bool, default=False)
+    parser.add_argument('--data-version', choices=['v4', 'v3', 'savee', 'improv'], type=str, default='v4')
+    parser.add_argument('--disable-wandb', type=str2bool, default=False)
     parser.add_argument('--zeta-nb-steps', type=int, default=1000000)
     parser.add_argument('--nb-steps', type=int, default=500000)
     parser.add_argument('--max-train-steps', type=int, default=440000)
     parser.add_argument('--eps', type=float, default=0.1)
-    parser.add_argument('--pre-train', type=bool, default=False)
+    parser.add_argument('--pre-train', type=str2bool, default=False)
     parser.add_argument('--warmup-steps', type=int, default=50000)
     parser.add_argument('--pretrain-epochs', type=int, default=64)
+    parser.add_argument('--gpu', type=int, default=1)
     args = parser.parse_args()
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.1)
+    config = tf.ConfigProto(gpu_options=gpu_options)
+    config.gpu_options.allow_growth = True
+    sess = tf.Session(config=config)
+    tf.compat.v1.keras.backend.set_session(sess)
 
     data_version, policy = parse_args(args)
 
@@ -90,11 +105,14 @@ def run():
     if data_version == DataVersions.Vsavee:
         env = SAVEEEnv(data_version)
 
+    if data_version == DataVersions.Vimprov:
+        env = ImprovEnv(data_version)
+
     for k in args.__dict__.keys():
         print("\t{} :\t{}".format(k, args.__dict__[k]))
         env.__setattr__("_" + k, args.__dict__[k])
 
-    exp_name = "P-{}-S-{}-e-{}".format(args.policy, args.zeta_nb_steps, args.eps)
+    exp_name = "P-{}-S-{}-e-{}-pt-{}".format(args.policy, args.zeta_nb_steps, args.eps, args.pre_train)
     env.__setattr__("_experiment", exp_name)
 
     nb_actions = env.action_space.n
@@ -102,6 +120,8 @@ def run():
     input_layer = Input(shape=(1, NUM_MFCC, NO_features))
     if data_version == DataVersions.Vsavee:
         input_layer = Input(shape=(1, NUM_MFCC, SAVEE_NO_features))
+    if data_version == DataVersions.Vimprov:
+        input_layer = Input(shape=(1, NUM_MFCC, IMPROV_NO_features))
 
     model = models.get_model_9_rl(input_layer, model_name_prefix='mfcc')
 
@@ -118,14 +138,29 @@ def run():
     dqn.compile(Adam(lr=.00025), metrics=['mae'])
 
     if args.pre_train:
-        from V4Dataset import V4Datastore
         from data import FeatureType
-        datastore = V4Datastore(FeatureType.MFCC)
+        from Datastore import Datastore
+        from IMPROVDataset import ImprovDataset
+
+        datastore: Datastore = None
+        no_features: int = 0
+
+        if data_version == DataVersions.V4:
+            from V4Dataset import V4Datastore
+            datastore = V4Datastore(FeatureType.MFCC)
+            no_features = NO_features
+
+        if data_version == DataVersions.Vimprov:
+            datastore = ImprovDataset()
+            no_features = IMPROV_NO_features
+
+        assert datastore is not None
+        assert no_features != 0
 
         x_train, y_train, y_gen_train = datastore.get_pre_train_data()
 
-        dqn.pre_train(x=x_train.reshape((len(x_train), 1, 40, 87)), y=y_train, EPOCHS=args.pretrain_epochs,
-                      batch_size=128)
+        dqn.pre_train(x=x_train.reshape((len(x_train), 1, NUM_MFCC, no_features)), y=y_train,
+                      EPOCHS=args.pretrain_epochs, batch_size=128)
 
     if args.mode == 'train':
         # Okay, now it's time to learn something! We capture the interrupt exception so that training

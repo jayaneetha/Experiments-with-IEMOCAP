@@ -7,9 +7,10 @@ SAMPLE_SPREADSHEET_ID = '1aWqtGXlQOz_RpNFgCVJ9ACyQeDKOUVHDUafdbUnPzeY'
 gss = None
 
 
-def run_experiment(row):
-    print(row.command)
-    os.system(row.command)
+def run_experiment(row, command_suffix: str):
+    command = row.command + " " + command_suffix
+    print(command)
+    os.system(command)
     # raise Exception('sdf')
 
 
@@ -18,6 +19,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tmux', type=str)
     parser.add_argument('--num-jobs', type=int, default=5)
+    parser.add_argument('--suffix', type=str, default='')
     args = parser.parse_args()
     tmux_name = args.tmux
     num_jobs = args.num_jobs
@@ -32,7 +34,7 @@ def main():
             gss.update_status('running', row_number)
             gss.update_tmux("{}_job:{}".format(tmux_name, str(job)), row_number)
             try:
-                run_experiment(row)
+                run_experiment(row, args.suffix)
             except:
                 gss.update_status('failed', row_number)
             else:
