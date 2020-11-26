@@ -1,6 +1,6 @@
 import argparse
-
 import os
+
 import tensorflow as tf
 from keras import Input
 from keras.optimizers import Adam
@@ -67,6 +67,18 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
+def str2dataset(v):
+    ds = v.lower()
+    if ds == 'v3':
+        return DataVersions.V3
+    if ds == 'v4':
+        return DataVersions.V4
+    if ds == 'savee':
+        return DataVersions.Vsavee
+    if ds == 'improv':
+        return DataVersions.Vimprov
+
+
 def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=['train', 'test'], default='train')
@@ -80,6 +92,9 @@ def run():
     parser.add_argument('--max-train-steps', type=int, default=440000)
     parser.add_argument('--eps', type=float, default=0.1)
     parser.add_argument('--pre-train', type=str2bool, default=False)
+    parser.add_argument('--pre-train-dataset',
+                        choices=[DataVersions.V4, DataVersions.V3, DataVersions.Vsavee, DataVersions.Vimprov],
+                        type=str2dataset, default=DataVersions.V4)
     parser.add_argument('--warmup-steps', type=int, default=50000)
     parser.add_argument('--pretrain-epochs', type=int, default=64)
     parser.add_argument('--gpu', type=int, default=1)
@@ -113,6 +128,9 @@ def run():
         env.__setattr__("_" + k, args.__dict__[k])
 
     exp_name = "P-{}-S-{}-e-{}-pt-{}".format(args.policy, args.zeta_nb_steps, args.eps, args.pre_train)
+    if args.pre_train:
+        exp_name = "P-{}-S-{}-e-{}-pt-{}-pt-w-{}".format(args.policy, args.zeta_nb_steps, args.eps, args.pre_train,
+                                                         args.pre_train_dataset.name)
     env.__setattr__("_experiment", exp_name)
 
     nb_actions = env.action_space.n
@@ -145,13 +163,13 @@ def run():
         datastore: Datastore = None
         no_features: int = 0
 
-        if data_version == DataVersions.V4:
+        if args.pre_train_dataset == DataVersions.V4:
             from V4Dataset import V4Datastore
             datastore = V4Datastore(FeatureType.MFCC)
             no_features = NO_features
 
-        if data_version == DataVersions.Vimprov:
-            datastore = ImprovDataset()
+        if args.pre_train_dataset == DataVersions.Vimprov:
+            datastore = ImprovDataset(22)
             no_features = IMPROV_NO_features
 
         assert datastore is not None

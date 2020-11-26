@@ -2,14 +2,9 @@ import gym
 import numpy as np
 import pandas as pd
 
-from Datastore import Datastore
 from IMPROVDataset import ImprovDataset
-from V4Dataset import V4Datastore
 from constants import EMOTIONS, NUM_MFCC, NO_features
-from data import FeatureType
-from data_versions import DataVersions
 from hashing_util import get_hash
-from inmemdatastore import InMemDatastore
 
 
 class ImprovEnv(gym.Env):
@@ -25,7 +20,7 @@ class ImprovEnv(gym.Env):
 
         self.data_version = data_version
 
-        self.datastore = ImprovDataset()
+        self.datastore = ImprovDataset(22)
 
         self.set_data()
 

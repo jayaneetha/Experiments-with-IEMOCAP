@@ -1,8 +1,8 @@
+import numpy as np
+
 from Datastore import Datastore
 from Framework import get_dataset, randomize_split
 from data import FeatureType
-import numpy as np
-
 from hashing_util import get_hash
 
 
@@ -10,8 +10,8 @@ class ImprovDataset(Datastore):
     data = []
     pre_train_data = []
 
-    def __init__(self) -> None:
-        self.data_pkl = get_dataset('improv-4_Class-sr_44k_2sec.pkl')
+    def __init__(self, sr: int = 44) -> None:
+        self.data_pkl = get_dataset('improv-4_Class-sr_' + str(sr) + 'k_2sec.pkl')
 
         for d in self.data_pkl:
             self.data.append({
@@ -33,8 +33,8 @@ class ImprovDataset(Datastore):
         y_train_gen = np.array([d['y_gen'] for d in training_data])
 
         x_test_mfcc = np.array([d[FeatureType.MFCC.name] for d in testing_data])
-        y_test_emo = np.array([d['y_emo'] for d in training_data])
-        y_test_gen = np.array([d['y_gen'] for d in training_data])
+        y_test_emo = np.array([d['y_emo'] for d in testing_data])
+        y_test_gen = np.array([d['y_gen'] for d in testing_data])
         return (x_train_mfcc, y_train_emo, y_train_gen), (x_test_mfcc, y_test_emo, y_test_gen)
 
     def get_data_hash_list(self):
